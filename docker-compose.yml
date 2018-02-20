@@ -1,0 +1,47 @@
+version: '3.3'
+
+services:
+
+  crate:
+    image: crate
+    expose:
+      - 4200/tcp
+    ports:
+      - "4200:4200"
+      - "5432:5432"
+#    environment:
+#      CREATE_HEAP_SIZE: 1g
+    volumes:
+      - ./data/crate:/data
+      - ./configs/crate/crate.yml:/crate/config/crate.yml
+    command: crate -Cnode.name=crate
+
+  prom:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    links:
+      - crate
+      - crate-adapter
+
+  crate-adapter:
+    image: crate/crate_adapter
+    ports:
+      - "9268:9268"
+    depends_on:
+      - crate
+    entrypoint: ["./crate_adapter", "-crate.url=http://crate:4200/_sql"]
+    links:
+      - crate
+
+  grafana:
+    image: grafana/grafana:5.0.0-beta4
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./data/grafana:/var/lib/grafana"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=secret
+

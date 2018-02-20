@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+remote_write:
+  - url: http://crate-adapter:9268/write
+    queue_config:
+      capacity: 1000000
+      batch_send_deadline: 10s
+      max_samples_per_send: 1000
+      max_shards: 1
+
+remote_read:
+  - url: http://crate-adapter:9268/read
